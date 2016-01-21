@@ -1,8 +1,6 @@
 # Add the required .NET assembly:
 Add-Type -AssemblyName System.Windows.Forms
 
-$TimeStamp = get-date -format g
-
 #variables for creating directory to store the log file
 
 $MyDocuments = [environment]::getfolderpath("mydocuments")
@@ -14,7 +12,6 @@ $OutputLoc = "$MyDocuments\$DocFolder\$DocSubFolder\desktopcheckerlog.txt"
 #conditional loop delay caused out-file dictorynotfoundexception
 new-item -path $MyDocuments -name $DocFolder -itemtype $DocFolderType -ErrorAction SilentlyContinue
 new-item -path "$MyDocuments\$DocFolder" -name $DocSubFolder -itemtype $DocFolderType -ErrorAction SilentlyContinue
-
 if((Test-Path -path $MyDocuments) -eq $false)
    {
    #warn user that a log file would not be present since the local documents folder could not be located
@@ -30,7 +27,65 @@ if((Test-Path -path $MyDocuments) -eq $false)
    ##Create Desktop Requirements Checker Folder under the Strata Decision Technology folder
    new-item -path "$MyDocuments\$DocFolder" -name $DocSubFolder -itemtype $DocFolderType
    }
-  
+   
+"#"*80 | out-file -filepath $OutputLoc -append
+"StrataJazz Desktop Requirements Checker Report" | out-file -filepath $OutputLoc -append
+"Generated $(get-date -format g)" | out-file -filepath $OutputLoc -append
+"Generated from $(gc env:computername)" | out-file -filepath $OutputLoc -append
+
+
+#sysinfo
+$ieversion = (get-item -path 'HKLM:\Software\Microsoft\Internet Explorer').getvalue('svcVersion') #IE 11 version reg path
+#IE10+ if svcVersion value existed
+if(((get-itemproperty -path 'HKLM:\Software\Microsoft\Internet Explorer').svcVersion) -ne $null) 
+{
+"IE Version: $ieversion"| out-file -filepath $OutputLoc -append
+}
+else
+{
+$warning = [System.Windows.Forms.MessageBox]::Show('Please update to the latest version of Microsoft .NET Framework.', 'StrataJazz Desktop Requirements Checker', 'OK', 'Warning')
+#The existing IE version might be out of date.
+{
+"IE version might be out of date."| out-file -filepath $OutputLoc -append
+}
+
+
+#OS Version
+$osversion = [System.IntPtr]::Size -eq 4
+if (($osversion) -ne $false)
+{ 
+$osout = "Operating System: $OSName 32-bit"| out-file -filepath $MyDocuments\$DocFolder\$DocSubFolder\desktopcheckerlog.txt -append
+} 
+else
+{ 
+"Operating System: $OSName 64-bit"| out-file -filepath $MyDocuments\$DocFolder\$DocSubFolder\desktopcheckerlog.txt -append
+}
+
+#Office Version
+if(((get-itemproperty HKLM:\Software\Microsoft\Office\*\Outlook).Bitness) -ne $null) 
+{
+"Office Architecture: 64-bit"| out-file -filepath $OutputLoc -append
+$warning = [System.Windows.Forms.MessageBox]::Show('A 64-bit Office is detected. Please use a 32-bit version of Office in order to launch the Excel financial models', 'StrataJazz Desktop Requirements Checker', 'OK', 'Warning')
+}
+else
+{
+"Office Architecture: 32-bit"| out-file -filepath $OutputLoc -append
+}
+
+#.NET version
+$NetPath = "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"
+$NetVersion = (get-itemproperty "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").version
+if(((get-itemproperty $NetPath).version) -ne $false)
+{
+".NET Framework Version: $NetVersion"| out-file -filepath $OutputLoc -append
+}
+else
+{
+".NET Framework Version is out of date."| out-file -filepath $OutputLoc -append
+$warning = [System.Windows.Forms.MessageBox]::Show('Please update to the latest version of Microsoft .NET Framework.', 'StrataJazz Desktop Requirements Checker', 'OK', 'Warning')
+}
+}
+"#"*80 | out-file -filepath $OutputLoc -append  
 
 
 #create a function to check existing registry key
@@ -67,7 +122,7 @@ try{
     #check registry key
    if((Test-Path -path $RegPath) -eq $false)
    {
-   "$TimeStamp $RegPath does not exist." | out-file -filepath $OutputLoc -append
+   "$RegPath does not exist." | out-file -filepath $OutputLoc -append
    return
    #exit function since registry path not found
    }
@@ -75,14 +130,14 @@ try{
    {
    #create a new registry key if it doesn't exist
    new-itemproperty -path $RegPath -name $RegName -value $RegValue -type $RegType -force
-   "$TimeStamp Created registry key $RegName." | out-file -filepath $OutputLoc -append
+   "Created registry key $RegName." | out-file -filepath $OutputLoc -append
    }
    #check registry value
    elseif((get-itemproperty -path $RegPath).$RegName -ne $RegValue)
    {
    #update registry value if it doesn't match
    set-itemproperty -path $RegPath -name $RegName -value $RegValue -type $RegType -force -erroraction silentlycontinue
-   "$TimeStamp Updated registry key $RegName value to $RegValue." | out-file -filepath $OutputLoc -append 
+   "Updated registry key $RegName value to $RegValue." | out-file -filepath $OutputLoc -append 
    return
    }
    }
@@ -91,7 +146,7 @@ catch{
      }
 finally{
       #yay
-       "$TimeStamp Registry value $RegValue for registry key named $RegName is already set correctly." | out-file -filepath $OutputLoc -append
+       "Registry value $RegValue for registry key named $RegName is already set correctly." | out-file -filepath $OutputLoc -append
     }
    
 }
@@ -107,14 +162,14 @@ try{
    #check folder path
    if((Test-Path -path $FolderPath) -eq $false)
    {
-   "$TimeStamp $FolderPath does not exist." | out-file -filepath $OutputLoc -append
+   "$FolderPath does not exist." | out-file -filepath $OutputLoc -append
    return #exit function when folderpath is not found
    }
    elseif((test-path -Path "$FolderPath\$FolderName") -eq $false)
    {
    #create new folder if doesn't exist
    new-item -path $FolderPath -name $FolderName -itemtype $FolderType -force -ErrorAction silentlycontinue
-   "$TimeStamp Created registry folder named $FolderName." | out-file -filepath $OutputLoc -append
+   "Created registry folder named $FolderName." | out-file -filepath $OutputLoc -append
    return
    }
    }
@@ -123,16 +178,14 @@ catch{
      }
 finally{
        #yay
-       "$TimeStamp Folder name $FolderName under $FolderPath is already existed." | out-file -filepath $OutputLoc -append
+       "Folder name $FolderName under $FolderPath is already existed." | out-file -filepath $OutputLoc -append
     }
    
 }
 
 
-
-
 #Add stratanetwork.com to compatibility view
-$ieversion = (get-item -path 'HKLM:\Software\Microsoft\Internet Explorer').getvalue('svcVersion') #IE 11 version reg path
+
 $ie11compviewpath = 'HKCU:\Software\Microsoft\Internet Explorer\BrowserEmulation\ClearableListData' #IE 11 compatiblity view settings path
 $ie11key = 'userfilter' #registry key name
 $ie11value = (get-item -path 'HKCU:\Software\Microsoft\Internet Explorer\BrowserEmulation\ClearableListData').getvalue('userfilter')
@@ -143,20 +196,20 @@ if ($ieversion -like "11*") #check for existing IE version
     #check for existing registry value
     if((test-RegistryKey -path $ie11compviewpath -value $ie11key) -eq $false) 
     {
-    "$TimeStamp stratanetwork.com needs to be added to the IE 11 Compatibility View Settings." | out-file -filepath $OutputLoc -append
+    "stratanetwork.com needs to be added to the IE 11 Compatibility View Settings." | out-file -filepath $OutputLoc -append
       #stop if returns false
     }
     #check if stratanetwork.com existed as a substring
     elseif(([Text.Encoding]::unicode.getstring($ie11value) -like "*stratanetwork.com*") -ne $false)
     {
     #website existed
-    "$TimeStamp stratanetwork.com is already added to the IE 11 Compatibility View Settings." | out-file -filepath $OutputLoc -append
+    "stratanetwork.com is already added to the IE 11 Compatibility View Settings." | out-file -filepath $OutputLoc -append
       #exit when the website is confirmed on the list
     }
     else
     {
     #website missing
-    "$TimeStamp stratanetwork.com needs to be added to the IE 11 Compatibility View Settings." | out-file -filepath $OutputLoc -append
+    "stratanetwork.com needs to be added to the IE 11 Compatibility View Settings." | out-file -filepath $OutputLoc -append
     
     }
 }
@@ -184,7 +237,6 @@ set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security\tru
 set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security\trusted locations\Location99' -regname 'Description' -regvalue 'StrataJazz' -regtype 'string'
 set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security\trusted locations' -regname 'AllowNetworkLocations' -regvalue 1 -regtype 'dword'
 #########################Excel Scripts End######################################################
-
 
 # cross the finish line and show the MsgBox:
 $result = [System.Windows.Forms.MessageBox]::Show('Process completed. Please contact support@stratadecision.com for additional assistance.', 'StrataJazz Desktop Requirements Checker', 'OK', 'Information')
