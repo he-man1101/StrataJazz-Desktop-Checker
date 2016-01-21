@@ -129,6 +129,8 @@ finally{
 }
 
 
+
+
 #Add stratanetwork.com to compatibility view
 $ieversion = (get-item -path 'HKLM:\Software\Microsoft\Internet Explorer').getvalue('svcVersion') #IE 11 version reg path
 $ie11compviewpath = 'HKCU:\Software\Microsoft\Internet Explorer\BrowserEmulation\ClearableListData' #IE 11 compatiblity view settings path
@@ -176,7 +178,7 @@ set-registryvalue -regpath 'HKCU:\Software\Microsoft\Internet Explorer\New Windo
 set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security' -regname 'AccessVBOM' -regvalue 1 -regtype 'dword'
 #Add User My Documents location to Trusted Locations
 set-foldervalue -folderpath 'HKCU:\software\microsoft\office\*\excel\security\trusted locations' -foldername 'Location99' -foldertype 'folder'
-set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security\trusted locations\Location99' -regname 'Path' -regvalue '$env:USERPROFILE\documents' -regtype 'string'
+set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security\trusted locations\Location99' -regname 'Path' -regvalue $MyDocuments -regtype 'string'
 set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security\trusted locations\Location99' -regname 'AllowSubfolders' -regvalue 1 -regtype 'dword'
 set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security\trusted locations\Location99' -regname 'Date' -regvalue (get-date).tostring() -regtype 'string'
 set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security\trusted locations\Location99' -regname 'Description' -regvalue 'StrataJazz' -regtype 'string'
