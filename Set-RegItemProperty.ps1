@@ -34,10 +34,9 @@ if((Test-Path -path $MyDocuments) -eq $false)
 "Generated $(get-date -format g)" | out-file -filepath $OutputLoc -append
 "Generated from $(gc env:computername)" | out-file -filepath $OutputLoc -append
 "Log File Location: $OutputLoc" | out-file -filepath $OutputLoc -append
-
-(Get-WmiObject -class Win32_OperatingSystem -computername $sServer | Select-Object Caption, OSArchitecture | Format-Table -HideTableHeaders -autosize) |Add-Content $OutputLoc
+(Get-WmiObject -class Win32_OperatingSystem | Select-Object Caption, OSArchitecture | Format-Table -HideTableHeaders -autosize) | out-file -filepath $OutputLoc -append
 "Internet Explorer Version $((get-itemproperty -path 'HKLM:\Software\Microsoft\Internet Explorer').svcVersion)" | out-file -filepath $OutputLoc -append
-#Office Version
+#Office Version 
 (get-itemproperty -path 'HKLM:\Software\Microsoft\Office\*\ClickToRun\Configuration' |select-object ProductReleaseIds, Platform | Format-Table -HideTableHeaders -autosize) | out-file -filepath $OutputLoc -append 
 #Office Version
 if(((get-itemproperty HKLM:\Software\Microsoft\Office\*\Outlook).Bitness) -ne $null) 
