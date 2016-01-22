@@ -27,64 +27,40 @@ if((Test-Path -path $MyDocuments) -eq $false)
    ##Create Desktop Requirements Checker Folder under the Strata Decision Technology folder
    new-item -path "$MyDocuments\$DocFolder" -name $DocSubFolder -itemtype $DocFolderType
    }
-   
+
+  
 "#"*80 | out-file -filepath $OutputLoc -append
 "StrataJazz Desktop Requirements Checker Report" | out-file -filepath $OutputLoc -append
 "Generated $(get-date -format g)" | out-file -filepath $OutputLoc -append
 "Generated from $(gc env:computername)" | out-file -filepath $OutputLoc -append
+"Log File Location: $OutputLoc" | out-file -filepath $OutputLoc -append
 
-
-#sysinfo
-$ieversion = (get-item -path 'HKLM:\Software\Microsoft\Internet Explorer').getvalue('svcVersion') #IE 11 version reg path
-#IE10+ if svcVersion value existed
-if(((get-itemproperty -path 'HKLM:\Software\Microsoft\Internet Explorer').svcVersion) -ne $null) 
-{
-"IE Version: $ieversion"| out-file -filepath $OutputLoc -append
-}
-else
-{
-$warning = [System.Windows.Forms.MessageBox]::Show('Please update to the latest version of Microsoft .NET Framework.', 'StrataJazz Desktop Requirements Checker', 'OK', 'Warning')
-#The existing IE version might be out of date.
-{
-"IE version might be out of date."| out-file -filepath $OutputLoc -append
-}
-
-
-#OS Version
-$osversion = [System.IntPtr]::Size -eq 4
-if (($osversion) -ne $false)
-{ 
-$osout = "Operating System: $OSName 32-bit"| out-file -filepath $MyDocuments\$DocFolder\$DocSubFolder\desktopcheckerlog.txt -append
-} 
-else
-{ 
-"Operating System: $OSName 64-bit"| out-file -filepath $MyDocuments\$DocFolder\$DocSubFolder\desktopcheckerlog.txt -append
-}
-
+(Get-WmiObject -class Win32_OperatingSystem -computername $sServer | Select-Object Caption, OSArchitecture | Format-Table -HideTableHeaders -autosize) |Add-Content $OutputLoc
+"Internet Explorer Version $((get-itemproperty -path 'HKLM:\Software\Microsoft\Internet Explorer').svcVersion)" | out-file -filepath $OutputLoc -append
+#Office Version
+(get-itemproperty -path 'HKLM:\Software\Microsoft\Office\*\ClickToRun\Configuration' |select-object ProductReleaseIds, Platform | Format-Table -HideTableHeaders -autosize) | out-file -filepath $OutputLoc -append 
 #Office Version
 if(((get-itemproperty HKLM:\Software\Microsoft\Office\*\Outlook).Bitness) -ne $null) 
 {
-"Office Architecture: 64-bit"| out-file -filepath $OutputLoc -append
 $warning = [System.Windows.Forms.MessageBox]::Show('A 64-bit Office is detected. Please use a 32-bit version of Office in order to launch the Excel financial models', 'StrataJazz Desktop Requirements Checker', 'OK', 'Warning')
 }
 else
 {
-"Office Architecture: 32-bit"| out-file -filepath $OutputLoc -append
+out-null
 }
-
 #.NET version
 $NetPath = "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"
 $NetVersion = (get-itemproperty "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").version
 if(((get-itemproperty $NetPath).version) -ne $false)
 {
-".NET Framework Version: $NetVersion"| out-file -filepath $OutputLoc -append
+".NET Framework Version $NetVersion"| out-file -filepath $OutputLoc -append
 }
 else
 {
 ".NET Framework Version is out of date."| out-file -filepath $OutputLoc -append
 $warning = [System.Windows.Forms.MessageBox]::Show('Please update to the latest version of Microsoft .NET Framework.', 'StrataJazz Desktop Requirements Checker', 'OK', 'Warning')
 }
-}
+
 "#"*80 | out-file -filepath $OutputLoc -append  
 
 
@@ -225,7 +201,7 @@ set-registryvalue -RegPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Inte
 set-foldervalue -folderpath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains' -foldername 'stratanetwork.com' -foldertype 'folder'
 set-registryvalue -regpath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\stratanetwork.com' -regname 'https' -regvalue 2 -regtype 'dword'
 #Add stratanetwork.com to pop-up blocker exception
-set-registryvalue -regpath 'HKCU:\Software\Microsoft\Internet Explorer\New Windows\Allow' -regname '*.stratanetwork.com' -regvalue (0X00, 0x00) -type 'binary'
+set-itemproperty -path 'HKCU:\Software\Microsoft\Internet Explorer\New Windows\Allow' -name '*.stratanetwork.com' -value (0X00, 0x00) -type 'binary' -ErrorAction SilentlyContinue
 #########################Excel Scripts######################################################
 #Enable VBA on Excel
 set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security' -regname 'AccessVBOM' -regvalue 1 -regtype 'dword'
@@ -240,3 +216,5 @@ set-registryvalue -regpath 'HKCU:\software\microsoft\office\*\excel\security\tru
 
 # cross the finish line and show the MsgBox:
 $result = [System.Windows.Forms.MessageBox]::Show('Process completed. Please contact support@stratadecision.com for additional assistance.', 'StrataJazz Desktop Requirements Checker', 'OK', 'Information')
+
+Invoke-Item $OutputLoc
