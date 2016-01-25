@@ -6,10 +6,10 @@ The program basically checks/add our domain to the IE Compatibility View Setting
 For Excel, the program will enable Developer Macro Settings and add the Documents folder to the Trusted Location.
 
 # Questions and issues
-
+Please report all bugs to on the "Issues" tab.
 
 #Thanks
+My manager Matt Price for allowing me to push forward with my idea and his assistance for tackling the binary data type.
 
-
-#Install
+#Install (.exe)
 http://bit.ly/1K1nv5T
