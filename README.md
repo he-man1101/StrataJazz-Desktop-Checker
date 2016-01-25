@@ -6,7 +6,7 @@ The program basically checks/add our domain to the IE Compatibility View Setting
 For Excel, the program will enable Developer Macro Settings and add the Documents folder to the Trusted Location.
 
 # Questions and issues
-Please report all bugs to on the [Issues](StrataJazz-Desktop-Checker/Issues.md) tab.
+Please report all bugs to on the [Issues](https://github.com/he-man1101/StrataJazz-Desktop-Checker/issues) tab.
 
 #Thanks
 My manager Matt Price for allowing me to push forward with my idea and his assistance for tackling the binary data type.
